@@ -12,12 +12,23 @@ public class Response {
         this.status = status;
     }
     
+    public Response(int status, String message) {
+        this.message = message;
+        this.status = status;
+    }
+    
     public Response(String message, int status, Object object) {
         this.message = message;
         this.status = status;
         this.object = object;
     }
 
+    public Response(int status, String message, Object object) {
+        this.message = message;
+        this.status = status;
+        this.object = object;
+    }
+    
     public String getMessage() {
         return message;
     }
