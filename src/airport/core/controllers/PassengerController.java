@@ -5,56 +5,25 @@ import airport.core.controllers.utils.Status;
 import airport.core.models.Passenger;
 import airport.core.models.storage.JsonRepository;
 import airport.core.models.storage.adapters.PassengerAdapter;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 public class PassengerController {
-    private final JsonRepository<Passenger> repository;
+
+    private final JsonRepository<Passenger> repo;
 
     public PassengerController() {
-        this.repository = new JsonRepository<>("json/passengers.json", new PassengerAdapter());
+        this.repo = new JsonRepository<>("json/passengers.json", new PassengerAdapter());
     }
 
-    public Response create(Passenger p) {
-        if (repository.find(existing -> existing.getId() == p.getId()).isPresent()) {
-            return new Response(Status.BAD_REQUEST, "ID ya existe");
+    public Response<List<Passenger>> getAllPassengers() {
+        try {
+            List<Passenger> list = repo.getAll();
+            list.sort(Comparator.comparingLong(Passenger::getId));
+            return new Response<>(Status.OK, "Pasajeros obtenidos", list);
+        } catch (Exception e) {
+            return new Response<>(Status.INTERNAL_SERVER_ERROR, "Error obteniendo pasajeros", Collections.emptyList());
         }
-        repository.add(p);
-        return new Response(Status.CREATED, "Pasajero creado");
-    }
-
-    public Response update(Passenger updated) {
-        repository.update(list -> {
-            for (Passenger p : list) {
-                if (p.getId() == updated.getId()) {
-                    p.setFirstname(updated.getFirstname());
-                    p.setLastname(updated.getLastname());
-                    p.setBirthDate(updated.getBirthDate());
-                    p.setCountryPhoneCode(updated.getCountryPhoneCode());
-                    p.setPhone(updated.getPhone());
-                    p.setCountry(updated.getCountry());
-                    return true;
-                }
-            }
-            return false;
-        });
-        return new Response(Status.OK, "Pasajero actualizado");
-    }
-
-    public Response delete(long id) {
-        boolean removed = repository.remove(p -> p.getId() == id);
-        return removed
-            ? new Response(Status.OK, "Pasajero eliminado")
-            : new Response(Status.NOT_FOUND, "No se encontró el pasajero");
-    }
-
-    public List<Passenger> getAllSorted() {
-        List<Passenger> sorted = repository.getAll();
-        sorted.sort(Comparator.comparingLong(Passenger::getId));
-        return sorted;
-    }
-
-    public Passenger findById(long id) {
-        return repository.find(p -> p.getId() == id).orElse(null);
     }
 }

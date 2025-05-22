@@ -106,14 +106,5 @@
         "id": 127449631,
         "birthDate": "1996-10-03",
         "lastname": "Wei"
-    },
-    {
-        "country": "UpdatedLand",
-        "firstname": "Updated",
-        "countryPhoneCode": 57,
-        "phone": 3001234567,
-        "id": 99999,
-        "birthDate": "2000-01-01",
-        "lastname": "User"
     }
 ]
