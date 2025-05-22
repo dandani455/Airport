@@ -1,11 +1,10 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package airport;
 
+import airport.core.controllers.FlightController;
+import airport.core.controllers.LocationController;
 import javax.swing.JOptionPane;
 import airport.core.controllers.PassengerController;
+import airport.core.controllers.PlaneController;
 import airport.core.models.Location;
 import airport.core.models.Passenger;
 import airport.core.models.Plane;
@@ -32,11 +31,20 @@ public class AirportFrame extends javax.swing.JFrame {
     private ArrayList<Location> locations;
     private ArrayList<Flight> flights;
     private PassengerController passengerController;
+    private FlightController flightController;
+    private LocationController locationController;
+    private PlaneController planeController;
 
     public AirportFrame() {
         initComponents();
 
         passengerController = new PassengerController();
+        locationController = new LocationController();
+        planeController = new PlaneController();
+        flightController = new FlightController(
+                new PlaneController().getAllPlanes().getObject(),
+                new LocationController().getAllLocations().getObject()
+        );
 
         this.passengers = new ArrayList<>();
         this.planes = new ArrayList<>();
@@ -52,7 +60,7 @@ public class AirportFrame extends javax.swing.JFrame {
         this.generateMinutes();
         this.blockPanels();
     }
-    
+
     private void blockPanels() {
         //9, 11
         for (int i = 1; i < jTabbedPane1.getTabCount(); i++) {
@@ -1646,33 +1654,76 @@ public class AirportFrame extends javax.swing.JFrame {
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-    
+
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        // TODO add your handling code here:
-        DefaultTableModel model = (DefaultTableModel) jTable3.getModel();
-        model.setRowCount(0);
-        for (Flight flight : this.flights) {
-            model.addRow(new Object[]{flight.getId(), flight.getDepartureLocation().getAirportId(), flight.getArrivalLocation().getAirportId(), (flight.getScaleLocation() == null ? "-" : flight.getScaleLocation().getAirportId()), flight.getDepartureDate(), flight.calculateArrivalDate(), flight.getPlane().getId(), flight.getNumPassengers()});
+        Response<List<Flight>> response = flightController.getAllFlights();
+
+        if (response.getStatus() == Status.OK) {
+            List<Flight> flightList = response.getObject();
+            DefaultTableModel model = (DefaultTableModel) jTable3.getModel();
+            model.setRowCount(0); // Limpiar tabla
+
+            for (Flight flight : flightList) {
+                model.addRow(new Object[]{
+                    flight.getId(),
+                    flight.getDepartureLocation().getAirportId(),
+                    flight.getArrivalLocation().getAirportId(),
+                    (flight.getScaleLocation() == null ? "-" : flight.getScaleLocation().getAirportId()),
+                    flight.getDepartureDate(),
+                    flight.calculateArrivalDate(),
+                    flight.getPlane().getId(),
+                    flight.getNumPassengers()
+                });
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-        // TODO add your handling code here:
-        DefaultTableModel model = (DefaultTableModel) jTable4.getModel();
-        model.setRowCount(0);
-        for (Plane plane : this.planes) {
-            model.addRow(new Object[]{plane.getId(), plane.getBrand(), plane.getModel(), plane.getMaxCapacity(), plane.getAirline(), plane.getNumFlights()});
+
+        Response<List<Plane>> response = planeController.getAllPlanes();
+
+        if (response.getStatus() == Status.OK) {
+            List<Plane> planeList = response.getObject();
+            DefaultTableModel model = (DefaultTableModel) jTable4.getModel();
+            model.setRowCount(0); // Limpiar tabla
+
+            for (Plane plane : planeList) {
+                model.addRow(new Object[]{
+                    plane.getId(),
+                    plane.getBrand(),
+                    plane.getModel(),
+                    plane.getMaxCapacity(),
+                    plane.getAirline(),
+                    plane.getNumFlights()
+                });
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-        // TODO add your handling code here:
-        DefaultTableModel model = (DefaultTableModel) jTable5.getModel();
-        model.setRowCount(0);
-        for (Location location : this.locations) {
-            model.addRow(new Object[]{location.getAirportId(), location.getAirportName(), location.getAirportCity(), location.getAirportCountry()});
+        Response<List<Location>> response = locationController.getAllLocations();
+
+        if (response.getStatus() == Status.OK) {
+            List<Location> locationList = response.getObject();
+            DefaultTableModel model = (DefaultTableModel) jTable5.getModel();
+            model.setRowCount(0); // Limpiar tabla
+
+            for (Location location : locationList) {
+                model.addRow(new Object[]{
+                    location.getAirportId(),
+                    location.getAirportName(),
+                    location.getAirportCity(),
+                    location.getAirportCountry()
+                });
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_jButton6ActionPerformed
 
@@ -1683,11 +1734,10 @@ public class AirportFrame extends javax.swing.JFrame {
     private void userSelectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_userSelectActionPerformed
         try {
             String id = userSelect.getSelectedItem().toString();
-            if (! id.equals(userSelect.getItemAt(0))) {
+            if (!id.equals(userSelect.getItemAt(0))) {
                 jTextField20.setText(id);
                 jTextField28.setText(id);
-            }
-            else{
+            } else {
                 jTextField20.setText("");
                 jTextField28.setText("");
             }
