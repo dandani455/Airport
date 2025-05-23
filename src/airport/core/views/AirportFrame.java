@@ -59,6 +59,7 @@ public class AirportFrame extends javax.swing.JFrame {
         this.generateHours();
         this.generateMinutes();
         this.blockPanels();
+        this.cargarUsuariosEnComboBox();
     }
 
     private void blockPanels() {
@@ -103,6 +104,22 @@ public class AirportFrame extends javax.swing.JFrame {
             jComboBox8.addItem("" + i);
         }
     }
+    
+    private void cargarUsuariosEnComboBox() {
+    userSelect.removeAllItems(); // Vista se encarga solo de actualizar su propio estado
+
+    userSelect.setPrototypeDisplayValue("Nombre Apellido Largo");
+    
+    Response<List<String>> response = passengerController.getPassengerNameLabels(); // Controlador da los datos
+
+    if (response.getStatus() == Status.OK) {
+        for (String nombre : response.getObject()) {
+            userSelect.addItem(nombre); // Cargar en componente visual
+        }
+    } else {
+        JOptionPane.showMessageDialog(this, "Error al cargar usuarios: " + response.getMessage());
+    }
+}
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -1658,6 +1675,7 @@ public class AirportFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+
         Response<List<Flight>> response = flightController.getAllFlights();
 
         if (response.getStatus() == Status.OK) {
@@ -1680,6 +1698,7 @@ public class AirportFrame extends javax.swing.JFrame {
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
@@ -1704,9 +1723,11 @@ public class AirportFrame extends javax.swing.JFrame {
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+
         Response<List<Location>> response = locationController.getAllLocations();
 
         if (response.getStatus() == Status.OK) {
@@ -1722,9 +1743,11 @@ public class AirportFrame extends javax.swing.JFrame {
                     location.getAirportCountry()
                 });
             }
+            JOptionPane.showMessageDialog(this, response.getMessage(), "Ok", JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton13ActionPerformed
@@ -1732,17 +1755,7 @@ public class AirportFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton13ActionPerformed
 
     private void userSelectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_userSelectActionPerformed
-        try {
-            String id = userSelect.getSelectedItem().toString();
-            if (!id.equals(userSelect.getItemAt(0))) {
-                jTextField20.setText(id);
-                jTextField28.setText(id);
-            } else {
-                jTextField20.setText("");
-                jTextField28.setText("");
-            }
-        } catch (Exception e) {
-        }
+        cargarUsuariosEnComboBox();
     }//GEN-LAST:event_userSelectActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

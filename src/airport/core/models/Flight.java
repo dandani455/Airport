@@ -1,4 +1,3 @@
-
 package airport;
 
 import airport.core.models.Location;

@@ -6,5 +6,4 @@ public interface JsonAdapter<T> {
     
     T fromJSON(JSONObject obj);
     JSONObject toJSON(T obj);
-
 }

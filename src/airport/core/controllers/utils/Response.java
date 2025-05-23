@@ -39,5 +39,4 @@ public class Response<T> {
     public T getObject() {
         return object;
     }
-    
 }
