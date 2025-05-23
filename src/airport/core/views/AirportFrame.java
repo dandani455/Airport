@@ -17,12 +17,10 @@ import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 import airport.core.controllers.utils.Response;
 import airport.core.controllers.utils.Status;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
- *
- * @author edangulo
- */
 public class AirportFrame extends javax.swing.JFrame {
 
     private int x, y;
@@ -34,6 +32,7 @@ public class AirportFrame extends javax.swing.JFrame {
     private FlightController flightController;
     private LocationController locationController;
     private PlaneController planeController;
+    private Map<String, Long> nombreIdMap = new HashMap<>();
 
     public AirportFrame() {
         initComponents();
@@ -104,22 +103,23 @@ public class AirportFrame extends javax.swing.JFrame {
             jComboBox8.addItem("" + i);
         }
     }
-    
+
     private void cargarUsuariosEnComboBox() {
-    userSelect.removeAllItems(); // Vista se encarga solo de actualizar su propio estado
+        userSelect.removeAllItems();
+        nombreIdMap.clear(); // Limpiar antes de recargar
 
-    userSelect.setPrototypeDisplayValue("Nombre Apellido Largo");
-    
-    Response<List<String>> response = passengerController.getPassengerNameLabels(); // Controlador da los datos
+        Response<List<Passenger>> response = passengerController.getAllPassengers();
 
-    if (response.getStatus() == Status.OK) {
-        for (String nombre : response.getObject()) {
-            userSelect.addItem(nombre); // Cargar en componente visual
+        if (response.getStatus() == Status.OK) {
+            for (Passenger p : response.getObject()) {
+                String nombre = p.getFullname();
+                userSelect.addItem(nombre);
+                nombreIdMap.put(nombre, p.getId());
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Error cargando usuarios: " + response.getMessage());
         }
-    } else {
-        JOptionPane.showMessageDialog(this, "Error al cargar usuarios: " + response.getMessage());
     }
-}
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -1451,16 +1451,18 @@ public class AirportFrame extends javax.swing.JFrame {
         if (administrator.isSelected()) {
             administrator.setSelected(false);
         }
+
         for (int i = 1; i < jTabbedPane1.getTabCount(); i++) {
-
             jTabbedPane1.setEnabledAt(i, false);
-
         }
+
         jTabbedPane1.setEnabledAt(9, true);
         jTabbedPane1.setEnabledAt(5, true);
         jTabbedPane1.setEnabledAt(6, true);
         jTabbedPane1.setEnabledAt(7, true);
         jTabbedPane1.setEnabledAt(11, true);
+
+        cargarUsuariosEnComboBox();
     }//GEN-LAST:event_userActionPerformed
 
     private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
@@ -1561,32 +1563,32 @@ public class AirportFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton11ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-        long id = Long.parseLong(jTextField20.getText());
-        String firstname = jTextField22.getText();
-        String lastname = jTextField23.getText();
-        int year = Integer.parseInt(jTextField24.getText());
-        int month = Integer.parseInt(MONTH.getItemAt(MONTH5.getSelectedIndex()));
-        int day = Integer.parseInt(DAY.getItemAt(DAY5.getSelectedIndex()));
-        int phoneCode = Integer.parseInt(jTextField26.getText());
-        long phone = Long.parseLong(jTextField25.getText());
-        String country = jTextField27.getText();
+        try {
+            long id = Long.parseLong(jTextField20.getText());
+            String firstname = jTextField22.getText();
+            String lastname = jTextField23.getText();
+            String year = jTextField24.getText();
+            String month = (String) MONTH5.getSelectedItem();
+            String day = (String) DAY5.getSelectedItem();
+            String countryCode = jTextField26.getText();
+            String phone = jTextField25.getText();
+            String country = jTextField27.getText();
 
-        LocalDate birthDate = LocalDate.of(year, month, day);
+            Response<Void> response = passengerController.updatePassenger(
+                    id, firstname, lastname, year, month, day, countryCode, phone, country
+            );
 
-        Passenger passenger = null;
-        for (Passenger p : this.passengers) {
-            if (p.getId() == id) {
-                passenger = p;
+            if (response.getStatus() == Status.OK) {
+                JOptionPane.showMessageDialog(this, "Información actualizada exitosamente.");
+            } else if (response.getStatus() == Status.NO_CONTENT) {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Sin cambios", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-        }
 
-        passenger.setFirstname(firstname);
-        passenger.setLastname(lastname);
-        passenger.setBirthDate(birthDate);
-        passenger.setCountryPhoneCode(phoneCode);
-        passenger.setPhone(phone);
-        passenger.setCountry(country);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al actualizar: " + e.getMessage(), "Excepción", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton12ActionPerformed
@@ -1755,7 +1757,30 @@ public class AirportFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton13ActionPerformed
 
     private void userSelectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_userSelectActionPerformed
-        cargarUsuariosEnComboBox();
+        String selectedName = (String) userSelect.getSelectedItem();
+        if (selectedName == null || !nombreIdMap.containsKey(selectedName)) {
+            return;
+        }
+
+        long id = nombreIdMap.get(selectedName);
+        Response<Passenger> response = passengerController.getPassengerById(id);
+
+        if (response.getStatus() == Status.OK) {
+            Passenger p = response.getObject();
+
+            jTextField20.setText(String.valueOf(p.getId()));
+            jTextField20.setEditable(false);
+            jTextField22.setText(p.getFirstname());
+            jTextField23.setText(p.getLastname());
+            jTextField24.setText(String.valueOf(p.getBirthDate().getYear()));
+            MONTH5.setSelectedItem(String.valueOf(p.getBirthDate().getMonthValue()));
+            DAY5.setSelectedItem(String.valueOf(p.getBirthDate().getDayOfMonth()));
+            jTextField26.setText(String.valueOf(p.getCountryPhoneCode()));
+            jTextField25.setText(String.valueOf(p.getPhone()));
+            jTextField27.setText(p.getCountry());
+        } else {
+            JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_userSelectActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
