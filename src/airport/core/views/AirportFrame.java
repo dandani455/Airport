@@ -17,9 +17,11 @@ import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 import airport.core.controllers.utils.Response;
 import airport.core.controllers.utils.Status;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class AirportFrame extends javax.swing.JFrame {
 
@@ -37,12 +39,18 @@ public class AirportFrame extends javax.swing.JFrame {
     public AirportFrame() {
         initComponents();
 
-        passengerController = new PassengerController();
+        passengerController = new PassengerController(
+                new FlightController(
+                        new PlaneController().getAllPlanes().getObject(),
+                        new LocationController().getAllLocations().getObject()
+                ).getAllFlights().getObject()
+        );
         locationController = new LocationController();
         planeController = new PlaneController();
         flightController = new FlightController(
-                new PlaneController().getAllPlanes().getObject(),
-                new LocationController().getAllLocations().getObject()
+                planeController.getAllPlanes().getObject(),
+                locationController.getAllLocations().getObject(),
+                passengerController.getAllPassengers().getObject()
         );
 
         this.passengers = new ArrayList<>();
@@ -59,6 +67,7 @@ public class AirportFrame extends javax.swing.JFrame {
         this.generateMinutes();
         this.blockPanels();
         this.cargarUsuariosEnComboBox();
+        this.cargarVuelosEnComboBox();
     }
 
     private void blockPanels() {
@@ -118,6 +127,19 @@ public class AirportFrame extends javax.swing.JFrame {
             }
         } else {
             JOptionPane.showMessageDialog(this, "Error cargando usuarios: " + response.getMessage());
+        }
+    }
+
+    private void cargarVuelosEnComboBox() {
+        jComboBox5.removeAllItems(); // Limpia el ComboBox de vuelos
+
+        Response<List<Flight>> response = flightController.getAllFlights();
+        if (response.getStatus() == Status.OK) {
+            for (Flight flight : response.getObject()) {
+                jComboBox5.addItem(flight.getId()); // Muestra solo el ID del vuelo
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Error cargando vuelos: " + response.getMessage());
         }
     }
 
@@ -291,7 +313,7 @@ public class AirportFrame extends javax.swing.JFrame {
         jButton13.setText("X");
         jButton13.setBorderPainted(false);
         jButton13.setContentAreaFilled(false);
-        jButton13.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jButton13.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         jButton13.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton13ActionPerformed(evt);
@@ -974,6 +996,11 @@ public class AirportFrame extends javax.swing.JFrame {
 
         jComboBox5.setFont(new java.awt.Font("Yu Gothic UI", 0, 18)); // NOI18N
         jComboBox5.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Flight" }));
+        jComboBox5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBox5ActionPerformed(evt);
+            }
+        });
 
         jButton12.setFont(new java.awt.Font("Yu Gothic UI", 0, 18)); // NOI18N
         jButton12.setText("Add");
@@ -1592,27 +1619,23 @@ public class AirportFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton12ActionPerformed
-        // TODO add your handling code here:
-        long passengerId = Long.parseLong(jTextField28.getText());
-        String flightId = jComboBox5.getItemAt(jComboBox5.getSelectedIndex());
+        try {
+            long passengerId = Long.parseLong(jTextField28.getText());
+            String flightId = jComboBox5.getItemAt(jComboBox5.getSelectedIndex());
 
-        Passenger passenger = null;
-        Flight flight = null;
+            Response<Void> response = flightController.addPassengerToFlight(passengerId, flightId);
 
-        for (Passenger p : this.passengers) {
-            if (p.getId() == passengerId) {
-                passenger = p;
+            if (response.getStatus() == Status.OK) {
+                JOptionPane.showMessageDialog(this, "Pasajero agregado correctamente");
+
+                // ✅ Refrescar tabla de vuelos para mostrar número actualizado
+                jButton4ActionPerformed(null);
+            } else {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Datos inválidos", "Error", JOptionPane.ERROR_MESSAGE);
         }
-
-        for (Flight f : this.flights) {
-            if (flightId.equals(f.getId())) {
-                flight = f;
-            }
-        }
-
-        passenger.addFlight(flight);
-        flight.addPassenger(passenger);
     }//GEN-LAST:event_jButton12ActionPerformed
 
     private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
@@ -1632,21 +1655,40 @@ public class AirportFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton7ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // TODO add your handling code here:
-        long passengerId = Long.parseLong(userSelect.getItemAt(userSelect.getSelectedIndex()));
-
-        Passenger passenger = null;
-        for (Passenger p : this.passengers) {
-            if (p.getId() == passengerId) {
-                passenger = p;
-            }
+        String selectedName = (String) userSelect.getSelectedItem();
+        if (selectedName == null || selectedName.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Debe seleccionar un usuario", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
 
-        ArrayList<Flight> flights = passenger.getFlights();
+        Long id = nombreIdMap.get(selectedName);
+        if (id == null) {
+            JOptionPane.showMessageDialog(this, "No se encontró el ID del usuario", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        Response<List<Flight>> flightResponse = flightController.getAllFlights();
+
+        if (flightResponse.getStatus() != Status.OK) {
+            JOptionPane.showMessageDialog(this, "Error al obtener los vuelos", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Buscar vuelos relacionados en sesión
+        List<Flight> myFlights = flightResponse.getObject().stream()
+                .filter(f -> f.getPassengers().stream().anyMatch(p -> p.getId() == id))
+                .sorted(Comparator.comparing(Flight::getDepartureDate))
+                .collect(Collectors.toList());
+
         DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
         model.setRowCount(0);
-        for (Flight flight : flights) {
-            model.addRow(new Object[]{flight.getId(), flight.getDepartureDate(), flight.calculateArrivalDate()});
+
+        for (Flight flight : myFlights) {
+            model.addRow(new Object[]{
+                flight.getId(),
+                flight.getDepartureDate(),
+                flight.calculateArrivalDate()
+            });
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -1778,10 +1820,19 @@ public class AirportFrame extends javax.swing.JFrame {
             jTextField26.setText(String.valueOf(p.getCountryPhoneCode()));
             jTextField25.setText(String.valueOf(p.getPhone()));
             jTextField27.setText(p.getCountry());
+            jTextField28.setText(String.valueOf(id));
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_userSelectActionPerformed
+
+    private void jComboBox5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox5ActionPerformed
+        String selected = (String) userSelect.getSelectedItem();
+        if (selected != null && nombreIdMap.containsKey(selected)) {
+            long id = nombreIdMap.get(selected);
+            jTextField28.setText(String.valueOf(id)); // Campo de ID en pestaña "Add to flight"
+        }
+    }//GEN-LAST:event_jComboBox5ActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JComboBox<String> DAY;

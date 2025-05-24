@@ -1,5 +1,6 @@
 package airport.core.controllers;
 
+import airport.Flight;
 import airport.core.controllers.utils.Response;
 import airport.core.controllers.utils.Status;
 import airport.core.models.Passenger;
@@ -18,6 +19,10 @@ public class PassengerController {
 
     public PassengerController() {
         this.repo = new JsonRepository<>("json/passengers.json", new PassengerAdapter());
+    }
+
+    public PassengerController(List<Flight> flights) {
+        this.repo = new JsonRepository<>("json/passengers.json", new PassengerAdapter(flights));
     }
 
     public Response<List<Passenger>> getAllPassengers() {
@@ -84,12 +89,12 @@ public class PassengerController {
                     int y = Integer.parseInt(birthYear);
                     int m = Integer.parseInt(birthMonth);
                     int d = Integer.parseInt(birthDay);
-                    
+
                     if (y < 1900 || y > LocalDate.now().getYear()) {
                         return new Response<>(Status.BAD_REQUEST, "Año de nacimiento inválido. Debe ser mayor a 1900.");
                     }
                     LocalDate newBirth = LocalDate.of(y, m, d);
-                    
+
                     if (!newBirth.equals(existing.getBirthDate())) {
                         existing.setBirthDate(newBirth);
                         changed = true;
@@ -176,5 +181,17 @@ public class PassengerController {
         } catch (Exception e) {
             return new Response<>(Status.INTERNAL_SERVER_ERROR, "Error buscando pasajero");
         }
+    }
+
+    public void forceUpdatePassenger(Passenger updated) {
+        repo.update(list -> {
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i).getId() == updated.getId()) {
+                    list.set(i, updated);
+                    return true;
+                }
+            }
+            return false;
+        });
     }
 }
