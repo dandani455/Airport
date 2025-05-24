@@ -142,5 +142,29 @@
         "hoursDurationScale": 0,
         "arrivalLocation": "DUB",
         "hoursDurationArrival": 2
+    },
+    {
+        "plane": "TE01234",
+        "minutesDurationScale": 0,
+        "departureLocation": "COL",
+        "scaleLocation": null,
+        "minutesDurationArrival": 0,
+        "id": "AAA000",
+        "departureDate": "2000-01-01T01:00:00",
+        "hoursDurationScale": 0,
+        "arrivalLocation": "COL",
+        "hoursDurationArrival": 9
+    },
+    {
+        "plane": "TE01234",
+        "minutesDurationScale": 0,
+        "departureLocation": "COL",
+        "scaleLocation": "DXB",
+        "minutesDurationArrival": 0,
+        "id": "AAA001",
+        "departureDate": "2000-07-04T03:03:00",
+        "hoursDurationScale": 7,
+        "arrivalLocation": "CMN",
+        "hoursDurationArrival": 22
     }
 ]
