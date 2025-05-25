@@ -1747,7 +1747,7 @@ public class AirportFrame extends javax.swing.JFrame {
             if (response.getStatus() == Status.OK) {
                 JOptionPane.showMessageDialog(this, "Pasajero agregado correctamente");
 
-                jButton4ActionPerformed(null);
+                Add_AddToFlightActionPerformed(null);
             } else {
                 JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -1803,7 +1803,7 @@ public class AirportFrame extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Vuelo retrasado exitosamente");
 
             // Actualizar la tabla de vuelos
-            jButton4ActionPerformed(null);
+            DelayButton_DelayFlightActionPerformed(null);
 
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Formato de número inválido en hora o minuto", "Error", JOptionPane.ERROR_MESSAGE);
