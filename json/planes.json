@@ -1,86 +1,93 @@
 [
     {
-        "id": "AB12345",
-        "brand": "Boeing",
+        "maxCapacity": 210,
         "model": "737 MAX",
-        "maxCapacity": 210,
-        "airline": "American Airlines"
+        "id": "AB12345",
+        "airline": "American Airlines",
+        "brand": "Boeing"
     },
     {
-        "id": "CD67890",
-        "brand": "Airbus",
-        "model": "A320neo",
         "maxCapacity": 194,
-        "airline": "Delta Airlines"
+        "model": "A320neo",
+        "id": "CD67890",
+        "airline": "Delta Airlines",
+        "brand": "Airbus"
     },
     {
-        "id": "EF11223",
-        "brand": "Boeing",
-        "model": "787 Dreamliner",
         "maxCapacity": 296,
-        "airline": "United Airlines"
+        "model": "787 Dreamliner",
+        "id": "EF11223",
+        "airline": "United Airlines",
+        "brand": "Boeing"
     },
     {
-        "id": "GH44556",
-        "brand": "Embraer",
-        "model": "E195-E2",
         "maxCapacity": 146,
-        "airline": "Azul Linhas Aéreas"
+        "model": "E195-E2",
+        "id": "GH44556",
+        "airline": "Azul Linhas Aéreas",
+        "brand": "Embraer"
     },
     {
-        "id": "IJ77889",
-        "brand": "Airbus",
-        "model": "A350-900",
         "maxCapacity": 325,
-        "airline": "Lufthansa"
+        "model": "A350-900",
+        "id": "IJ77889",
+        "airline": "Lufthansa",
+        "brand": "Airbus"
     },
     {
-        "id": "KL33445",
-        "brand": "Bombardier",
-        "model": "CRJ900",
         "maxCapacity": 90,
-        "airline": "Air Canada"
+        "model": "CRJ900",
+        "id": "KL33445",
+        "airline": "Air Canada",
+        "brand": "Bombardier"
     },
     {
-        "id": "MN55667",
-        "brand": "Boeing",
-        "model": "777-300ER",
         "maxCapacity": 396,
-        "airline": "Emirates"
+        "model": "777-300ER",
+        "id": "MN55667",
+        "airline": "Emirates",
+        "brand": "Boeing"
     },
     {
-        "id": "OP88990",
-        "brand": "Airbus",
-        "model": "A330-300",
         "maxCapacity": 277,
-        "airline": "Qatar Airways"
+        "model": "A330-300",
+        "id": "OP88990",
+        "airline": "Qatar Airways",
+        "brand": "Airbus"
     },
     {
-        "id": "QR66778",
-        "brand": "Mitsubishi",
-        "model": "SpaceJet M90",
         "maxCapacity": 88,
-        "airline": "All Nippon Airways"
+        "model": "SpaceJet M90",
+        "id": "QR66778",
+        "airline": "All Nippon Airways",
+        "brand": "Mitsubishi"
     },
     {
-        "id": "ST99001",
-        "brand": "Tupolev",
-        "model": "Tu-204",
         "maxCapacity": 210,
-        "airline": "Rossiya Airlines"
+        "model": "Tu-204",
+        "id": "ST99001",
+        "airline": "Rossiya Airlines",
+        "brand": "Tupolev"
     },
     {
-        "id": "UV22334",
-        "brand": "Sukhoi",
-        "model": "Superjet 100",
         "maxCapacity": 108,
-        "airline": "Aeroflot"
+        "model": "Superjet 100",
+        "id": "UV22334",
+        "airline": "Aeroflot",
+        "brand": "Sukhoi"
     },
     {
-        "id": "WX55678",
-        "brand": "Comac",
-        "model": "C919",
         "maxCapacity": 168,
-        "airline": "China Eastern Airlines"
+        "model": "C919",
+        "id": "WX55678",
+        "airline": "China Eastern Airlines",
+        "brand": "Comac"
+    },
+    {
+        "maxCapacity": 10,
+        "model": "Test",
+        "id": "TE01234",
+        "airline": "TestAir",
+        "brand": "Test"
     }
 ]

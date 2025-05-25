@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package airport.core.models;
 
 import airport.Flight;
@@ -9,10 +6,6 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
 
-/**
- *
- * @author edangulo
- */
 public class Passenger {
     
     private final long id;
