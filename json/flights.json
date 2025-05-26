@@ -166,5 +166,29 @@
         "hoursDurationScale": 7,
         "arrivalLocation": "CMN",
         "hoursDurationArrival": 22
+    },
+    {
+        "plane": "TE01234",
+        "minutesDurationScale": 0,
+        "departureLocation": "COL",
+        "scaleLocation": "DUB",
+        "minutesDurationArrival": 50,
+        "id": "ABC123",
+        "departureDate": "2010-06-01T00:10:00",
+        "hoursDurationScale": 2,
+        "arrivalLocation": "MEX",
+        "hoursDurationArrival": 20
+    },
+    {
+        "plane": "AA00000",
+        "minutesDurationScale": 0,
+        "departureLocation": "AAA",
+        "scaleLocation": null,
+        "minutesDurationArrival": 9,
+        "id": "AAA003",
+        "departureDate": "2000-02-02T00:04:00",
+        "hoursDurationScale": 0,
+        "arrivalLocation": "AAA",
+        "hoursDurationArrival": 8
     }
 ]

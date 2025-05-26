@@ -2,6 +2,7 @@ package airport.core.controllers;
 
 import airport.core.controllers.utils.Response;
 import airport.core.controllers.utils.Status;
+import airport.core.controllers.validators.PlaneValidator;
 import airport.core.models.Plane;
 import airport.core.models.storage.JsonRepository;
 import airport.core.models.storage.adapters.PlaneAdapter;
@@ -9,7 +10,7 @@ import airport.core.models.storage.adapters.PlaneAdapter;
 import java.util.Comparator;
 import java.util.List;
 
-public class PlaneController {
+public class PlaneController extends BaseController {
 
     private final JsonRepository<Plane> repo;
 
@@ -18,49 +19,23 @@ public class PlaneController {
     }
 
     public Response<Void> createPlane(String id, String brand, String model, String capacityStr, String airline) {
-        final String finalId = id;        
         try {
-            if (id == null || brand == null || model == null || capacityStr == null || airline == null
-                    || id.trim().isEmpty() || brand.trim().isEmpty() || model.trim().isEmpty()
-                    || capacityStr.trim().isEmpty() || airline.trim().isEmpty()) {
-                return new Response<>(Status.BAD_REQUEST, "Todos los campos son obligatorios");
+            Response<Plane> valid = PlaneValidator.validate(id, brand, model, capacityStr, airline);
+            if (valid.getStatus() != Status.OK) {
+                return new Response<>(valid.getStatus(), valid.getMessage());
             }
 
-            id = id.trim();
-            brand = brand.trim();
-            model = model.trim();
-            airline = airline.trim();
+            Plane plane = valid.getObject();
 
-            // Validar manualmente el formato XXYYYYY (dos letras mayúsculas + 5 dígitos)
-            if (id.length() != 7
-                    || !Character.isUpperCase(id.charAt(0)) || !Character.isUpperCase(id.charAt(1))
-                    || !id.substring(2).matches("\\d{5}")) {
-                return new Response<>(Status.BAD_REQUEST, "El ID debe tener el formato XXYYYYY (dos letras y cinco dígitos)");
-            }
-
-            // Validar que el ID sea único
-            List<Plane> planes = repo.getAll();
-            boolean existe = planes.stream().anyMatch(p -> p.getId().equals(finalId));
+            boolean existe = repo.getAll().stream().anyMatch(p -> p.getId().equals(plane.getId()));
             if (existe) {
                 return new Response<>(Status.BAD_REQUEST, "Ya existe un avión con ese ID");
             }
 
-            // Validar capacidad
-            int capacity;
-            try {
-                capacity = Integer.parseInt(capacityStr);
-                if (capacity <= 0) {
-                    return new Response<>(Status.BAD_REQUEST, "La capacidad debe ser mayor que cero");
-                }
-            } catch (NumberFormatException e) {
-                return new Response<>(Status.BAD_REQUEST, "La capacidad debe ser un número entero válido");
-            }
-
-            Plane plane = new Plane(id, brand, model, capacity, airline);
             repo.add(plane);
+            notifyObservers();
 
-            return new Response<>(Status.OK, "Avión creado exitosamente");
-
+            return new Response<>(Status.CREATED, "Avión creado exitosamente");
         } catch (Exception e) {
             return new Response<>(Status.INTERNAL_SERVER_ERROR, "Error al crear avión");
         }

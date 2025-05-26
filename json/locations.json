@@ -102,5 +102,21 @@
         "airportLatitude": 4.7016,
         "airportId": "COL",
         "airportLongitude": -74.1469
+    },
+    {
+        "airportName": "Testport",
+        "airportCountry": "TestCountry",
+        "airportCity": "TestCity",
+        "airportLatitude": 20,
+        "airportId": "TES",
+        "airportLongitude": 30
+    },
+    {
+        "airportName": "A",
+        "airportCountry": "A",
+        "airportCity": "A",
+        "airportLatitude": 11,
+        "airportId": "AAA",
+        "airportLongitude": 1
     }
 ]
