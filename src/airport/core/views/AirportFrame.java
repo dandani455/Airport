@@ -168,6 +168,26 @@ public class AirportFrame extends javax.swing.JFrame {
         }
     }
 
+    private void refrescarVuelosDePasajero(long passengerId) {
+        Response<List<Flight>> response = flightController.getFlightsByPassengerId(passengerId);
+
+        if (response.getStatus() != Status.OK) {
+            JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        DefaultTableModel model = (DefaultTableModel) Table_ShowMyFlights.getModel();
+        model.setRowCount(0);
+
+        for (Flight flight : response.getObject()) {
+            model.addRow(new Object[]{
+                flight.getId(),
+                flight.getDepartureDate(),
+                flight.calculateArrivalDate()
+            });
+        }
+    }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -285,7 +305,7 @@ public class AirportFrame extends javax.swing.JFrame {
         RefreshButton_ShowMyFlights = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         Table_ShowMyFlights = new javax.swing.JTable();
-        jButton2 = new javax.swing.JButton();
+        RefreshButton_ShowAllMyFlights = new javax.swing.JButton();
         jPanel8 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
         Table_ShowAllPassengers = new javax.swing.JTable();
@@ -487,7 +507,7 @@ public class AirportFrame extends javax.swing.JFrame {
         jLabel12.setFont(new java.awt.Font("Yu Gothic UI", 0, 18)); // NOI18N
         jLabel12.setText("Brand:");
         jPanel3.add(jLabel12);
-        jLabel12.setBounds(53, 157, 52, 25);
+        jLabel12.setBounds(53, 157, 50, 25);
 
         Brand_AirplaneRegistration.setFont(new java.awt.Font("Yu Gothic UI", 0, 18)); // NOI18N
         jPanel3.add(Brand_AirplaneRegistration);
@@ -500,7 +520,7 @@ public class AirportFrame extends javax.swing.JFrame {
         jLabel13.setFont(new java.awt.Font("Yu Gothic UI", 0, 18)); // NOI18N
         jLabel13.setText("Model:");
         jPanel3.add(jLabel13);
-        jLabel13.setBounds(53, 216, 57, 25);
+        jLabel13.setBounds(53, 216, 55, 25);
 
         MaxCapacity_AirplaneRegistration.setFont(new java.awt.Font("Yu Gothic UI", 0, 18)); // NOI18N
         jPanel3.add(MaxCapacity_AirplaneRegistration);
@@ -509,7 +529,7 @@ public class AirportFrame extends javax.swing.JFrame {
         jLabel14.setFont(new java.awt.Font("Yu Gothic UI", 0, 18)); // NOI18N
         jLabel14.setText("Max Capacity:");
         jPanel3.add(jLabel14);
-        jLabel14.setBounds(53, 276, 114, 25);
+        jLabel14.setBounds(53, 276, 109, 25);
 
         Airline_AirplaneRegistration.setFont(new java.awt.Font("Yu Gothic UI", 0, 18)); // NOI18N
         jPanel3.add(Airline_AirplaneRegistration);
@@ -1108,11 +1128,11 @@ public class AirportFrame extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(Table_ShowMyFlights);
 
-        jButton2.setFont(new java.awt.Font("Yu Gothic UI", 0, 18)); // NOI18N
-        jButton2.setText("Refresh");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
+        RefreshButton_ShowAllMyFlights.setFont(new java.awt.Font("Yu Gothic UI", 0, 18)); // NOI18N
+        RefreshButton_ShowAllMyFlights.setText("Refresh");
+        RefreshButton_ShowAllMyFlights.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
+                RefreshButton_ShowAllMyFlightsActionPerformed(evt);
             }
         });
 
@@ -1126,7 +1146,7 @@ public class AirportFrame extends javax.swing.JFrame {
                 .addContainerGap(337, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, RefreshButton_ShowMyFlightsLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jButton2)
+                .addComponent(RefreshButton_ShowAllMyFlights)
                 .addGap(527, 527, 527))
         );
         RefreshButton_ShowMyFlightsLayout.setVerticalGroup(
@@ -1135,7 +1155,7 @@ public class AirportFrame extends javax.swing.JFrame {
                 .addGap(61, 61, 61)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
-                .addComponent(jButton2)
+                .addComponent(RefreshButton_ShowAllMyFlights)
                 .addContainerGap())
         );
 
@@ -1666,31 +1686,34 @@ public class AirportFrame extends javax.swing.JFrame {
 
     private void UpdateButton_UpdateInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_UpdateButton_UpdateInfoActionPerformed
         try {
-            long passengerId = Long.parseLong(ID_AddToFlight.getText().trim());
-            String flightId = (String) SelectFlight_AddToFlight.getSelectedItem();
+            long id = Long.parseLong(ID_UpdateInfo.getText().trim());
+            String firstname = FirstName_UpdateInfo.getText().trim();
+            String lastname = LastName_UpdateInfo.getText().trim();
+            String year = BirthdayYear_UpdateInfo.getText().trim();
+            String month = (String) SelectBirthdayMonth_UpdateInfo.getSelectedItem();
+            String day = (String) SelectBirthdayDay_UpdateInfo.getSelectedItem();
+            String phoneCode = CountryIdentifier_UpdateInfo.getText().trim();
+            String phone = Phone_UpdateInfo.getText().trim();
+            String country = Country_UpdateInfo.getText().trim();
 
-            if (flightId == null || flightId.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Debes seleccionar un vuelo.", "Advertencia", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            Response<Void> response = flightController.addPassengerToFlight(passengerId, flightId);
+            Response<Void> response = passengerController.updatePassenger(
+                    id, firstname, lastname, year, month, day, phoneCode, phone, country);
 
             if (response.getStatus() == Status.OK) {
                 JOptionPane.showMessageDialog(this, response.getMessage(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
-
-                Add_AddToFlightActionPerformed(null);
-            } else if (response.getStatus() >= 400 && response.getStatus() < 500) {
-                JOptionPane.showMessageDialog(this, response.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
+                refrescarVuelosDePasajero(id);
+                cargarUsuariosEnComboBox();
+            } else if (response.getStatus() == Status.NO_CONTENT) {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Sin cambios", JOptionPane.WARNING_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
             }
+
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "El ID del pasajero debe ser numérico.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El ID debe ser un número válido", "Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error inesperado: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-
     }//GEN-LAST:event_UpdateButton_UpdateInfoActionPerformed
 
     private void Add_AddToFlightActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_Add_AddToFlightActionPerformed
@@ -1707,8 +1730,7 @@ public class AirportFrame extends javax.swing.JFrame {
 
             if (response.getStatus() == Status.OK) {
                 JOptionPane.showMessageDialog(this, response.getMessage(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
-
-                Add_AddToFlightActionPerformed(null);
+                refrescarVuelosDePasajero(passengerId); // ✅ Refresca la tabla correctamente
             } else if (response.getStatus() >= 400 && response.getStatus() < 500) {
                 JOptionPane.showMessageDialog(this, response.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
             } else {
@@ -1744,7 +1766,7 @@ public class AirportFrame extends javax.swing.JFrame {
 
             if (response.getStatus() == Status.OK) {
                 JOptionPane.showMessageDialog(this, response.getMessage(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                DelayButton_DelayFlightActionPerformed(null); // Refrescar tabla
+                RefreshButton_ShowAllFlightsActionPerformed(null);
             } else if (response.getStatus() >= 400 && response.getStatus() < 500) {
                 JOptionPane.showMessageDialog(this, response.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
             } else {
@@ -1758,7 +1780,7 @@ public class AirportFrame extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_DelayButton_DelayFlightActionPerformed
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+    private void RefreshButton_ShowAllMyFlightsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RefreshButton_ShowAllMyFlightsActionPerformed
         String selectedName = (String) userSelect.getSelectedItem();
         if (selectedName == null || selectedName.trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Debe seleccionar un usuario", "Error", JOptionPane.ERROR_MESSAGE);
@@ -1771,31 +1793,26 @@ public class AirportFrame extends javax.swing.JFrame {
             return;
         }
 
-        Response<List<Flight>> flightResponse = flightController.getAllFlights();
+        Response<List<Flight>> response = flightController.getFlightsByPassengerId(id);
 
-        if (flightResponse.getStatus() != Status.OK) {
-            JOptionPane.showMessageDialog(this, "Error al obtener los vuelos", "Error", JOptionPane.ERROR_MESSAGE);
+        if (response.getStatus() != Status.OK) {
+            JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
-        // Buscar vuelos relacionados en sesión
-        List<Flight> myFlights = flightResponse.getObject().stream()
-                .filter(f -> f.getPassengers().stream().anyMatch(p -> p.getId() == id)).sorted(Comparator.comparing(Flight::getDepartureDate)).collect(Collectors.toList());
 
         DefaultTableModel model = (DefaultTableModel) Table_ShowMyFlights.getModel();
         model.setRowCount(0);
 
-        for (Flight flight : myFlights) {
+        for (Flight flight : response.getObject()) {
             model.addRow(new Object[]{
                 flight.getId(),
                 flight.getDepartureDate(),
                 flight.calculateArrivalDate()
             });
         }
-    }//GEN-LAST:event_jButton2ActionPerformed
+    }//GEN-LAST:event_RefreshButton_ShowAllMyFlightsActionPerformed
 
     private void RefreshButton_ShowAllPassengersActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RefreshButton_ShowAllPassengersActionPerformed
-
         Response<List<Passenger>> response = passengerController.getAllPassengers();
 
         if (response.getStatus() == Status.OK) {
@@ -1814,14 +1831,17 @@ public class AirportFrame extends javax.swing.JFrame {
                     passenger.getNumFlights()
                 });
             }
+
+            if (passengerList.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay pasajeros registrados.", "Información", JOptionPane.INFORMATION_MESSAGE);
+            }
+
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-
     }//GEN-LAST:event_RefreshButton_ShowAllPassengersActionPerformed
 
     private void RefreshButton_ShowAllFlightsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RefreshButton_ShowAllFlightsActionPerformed
-
         Response<List<Flight>> response = flightController.getAllFlights();
 
         if (response.getStatus() == Status.OK) {
@@ -1841,14 +1861,17 @@ public class AirportFrame extends javax.swing.JFrame {
                     flight.getNumPassengers()
                 });
             }
+
+            if (flightList.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay vuelos registrados.", "Información", JOptionPane.INFORMATION_MESSAGE);
+            }
+
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-
     }//GEN-LAST:event_RefreshButton_ShowAllFlightsActionPerformed
 
     private void RefreshButton_ShowAllPlanesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RefreshButton_ShowAllPlanesActionPerformed
-
         Response<List<Plane>> response = planeController.getAllPlanes();
 
         if (response.getStatus() == Status.OK) {
@@ -1866,14 +1889,17 @@ public class AirportFrame extends javax.swing.JFrame {
                     plane.getNumFlights()
                 });
             }
+
+            if (planeList.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay aviones registrados.", "Información", JOptionPane.INFORMATION_MESSAGE);
+            }
+
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-
     }//GEN-LAST:event_RefreshButton_ShowAllPlanesActionPerformed
 
     private void RefreshButton_ShowAllLocationsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RefreshButton_ShowAllLocationsActionPerformed
-
         Response<List<Location>> response = locationController.getAllLocations();
 
         if (response.getStatus() == Status.OK) {
@@ -1889,11 +1915,14 @@ public class AirportFrame extends javax.swing.JFrame {
                     location.getAirportCountry()
                 });
             }
-            JOptionPane.showMessageDialog(this, response.getMessage(), "Ok", JOptionPane.INFORMATION_MESSAGE);
+
+            if (locationList.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay localizaciones registradas.", "Información", JOptionPane.INFORMATION_MESSAGE);
+            }
+
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-
     }//GEN-LAST:event_RefreshButton_ShowAllLocationsActionPerformed
 
     private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton13ActionPerformed
@@ -1909,7 +1938,7 @@ public class AirportFrame extends javax.swing.JFrame {
         long id = nombreIdMap.get(selectedName);
         Response<Passenger> response = passengerController.getPassengerById(id);
 
-        if (response.getStatus() == Status.OK) {
+        if (response.getStatus() == Status.OK && response.getObject() != null) {
             Passenger p = response.getObject();
 
             ID_UpdateInfo.setText(String.valueOf(p.getId()));
@@ -1932,7 +1961,7 @@ public class AirportFrame extends javax.swing.JFrame {
         String selected = (String) userSelect.getSelectedItem();
         if (selected != null && nombreIdMap.containsKey(selected)) {
             long id = nombreIdMap.get(selected);
-            ID_AddToFlight.setText(String.valueOf(id)); // Campo de ID en pestaña "Add to flight"
+            ID_AddToFlight.setText(String.valueOf(id));
         }
     }//GEN-LAST:event_SelectFlight_AddToFlightActionPerformed
 
@@ -1991,6 +2020,7 @@ public class AirportFrame extends javax.swing.JFrame {
     private javax.swing.JTextField Phone_UpdateInfo;
     private javax.swing.JButton RefreshButton_ShowAllFlights;
     private javax.swing.JButton RefreshButton_ShowAllLocations;
+    private javax.swing.JButton RefreshButton_ShowAllMyFlights;
     private javax.swing.JButton RefreshButton_ShowAllPassengers;
     private javax.swing.JButton RefreshButton_ShowAllPlanes;
     private javax.swing.JPanel RefreshButton_ShowMyFlights;
@@ -2017,7 +2047,6 @@ public class AirportFrame extends javax.swing.JFrame {
     private javax.swing.JButton UpdateButton_UpdateInfo;
     private javax.swing.JRadioButton UserOption_Administration;
     private javax.swing.JButton jButton13;
-    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;

@@ -2,10 +2,11 @@ package airport.core.controllers;
 
 import airport.core.controllers.utils.Response;
 import airport.core.controllers.utils.Status;
+import airport.core.controllers.validators.LocationValidator;
 import airport.core.models.Location;
 import airport.core.models.storage.JsonRepository;
 import airport.core.models.storage.adapters.LocationAdapter;
-import java.math.BigDecimal;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -30,56 +31,20 @@ public class LocationController extends BaseController {
 
     public Response<Void> createLocation(String id, String name, String city, String country, String latitudeStr, String longitudeStr) {
         try {
-            // Validar ID
-            if (id == null || !id.matches("[A-Z]{3}")) {
-                return new Response<>(Status.BAD_REQUEST, "ID debe tener exactamente 3 letras mayúsculas");
+            Response<Location> valid = LocationValidator.validate(id, name, city, country, latitudeStr, longitudeStr);
+            if (valid.getStatus() != Status.OK) {
+                return new Response<>(valid.getStatus(), valid.getMessage());
             }
 
-            // Verificar unicidad del ID
-            List<Location> all = repo.getAll();
-            if (all.stream().anyMatch(loc -> loc.getAirportId().equals(id))) {
+            Location location = valid.getObject();
+
+            boolean exists = repo.getAll().stream()
+                    .anyMatch(loc -> loc.getAirportId().equals(location.getAirportId()));
+            if (exists) {
                 return new Response<>(Status.BAD_REQUEST, "Ya existe una localización con ese ID");
             }
 
-            // Validar campos no vacíos
-            if (name == null || name.trim().isEmpty()
-                    || city == null || city.trim().isEmpty()
-                    || country == null || country.trim().isEmpty()) {
-                return new Response<>(Status.BAD_REQUEST, "Nombre, ciudad y país no pueden estar vacíos");
-            }
-
-            // Validar latitud
-            double latitude;
-            try {
-                latitude = Double.parseDouble(latitudeStr);
-                if (latitude < -90 || latitude > 90) {
-                    return new Response<>(Status.BAD_REQUEST, "Latitud debe estar entre -90 y 90");
-                }
-                if (hasMoreThan4Decimals(latitude)) {
-                    return new Response<>(Status.BAD_REQUEST, "Latitud debe tener como máximo 4 decimales");
-                }
-            } catch (Exception e) {
-                return new Response<>(Status.BAD_REQUEST, "Latitud inválida");
-            }
-
-            // Validar longitud
-            double longitude;
-            try {
-                longitude = Double.parseDouble(longitudeStr);
-                if (longitude < -180 || longitude > 180) {
-                    return new Response<>(Status.BAD_REQUEST, "Longitud debe estar entre -180 y 180");
-                }
-                if (hasMoreThan4Decimals(longitude)) {
-                    return new Response<>(Status.BAD_REQUEST, "Longitud debe tener como máximo 4 decimales");
-                }
-            } catch (Exception e) {
-                return new Response<>(Status.BAD_REQUEST, "Longitud inválida");
-            }
-
-            // Crear localización
-            Location location = new Location(id, name.trim(), city.trim(), country.trim(), latitude, longitude);
             repo.add(location);
-
             notifyObservers();
 
             return new Response<>(Status.CREATED, "Localización creada correctamente");
@@ -87,10 +52,5 @@ public class LocationController extends BaseController {
         } catch (Exception e) {
             return new Response<>(Status.INTERNAL_SERVER_ERROR, "Error al crear localización");
         }
-    }
-
-    private boolean hasMoreThan4Decimals(double value) {
-        BigDecimal bd = BigDecimal.valueOf(value);
-        return bd.scale() > 4;
     }
 }

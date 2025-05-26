@@ -110,5 +110,13 @@
         "airportLatitude": 20,
         "airportId": "TES",
         "airportLongitude": 30
+    },
+    {
+        "airportName": "A",
+        "airportCountry": "A",
+        "airportCity": "A",
+        "airportLatitude": 11,
+        "airportId": "AAA",
+        "airportLongitude": 1
     }
 ]

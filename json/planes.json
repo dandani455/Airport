@@ -96,5 +96,12 @@
         "id": "AA12345",
         "airline": "Avianca",
         "brand": "Airboing123"
+    },
+    {
+        "maxCapacity": 1,
+        "model": "A",
+        "id": "AA00000",
+        "airline": "A",
+        "brand": "A"
     }
 ]
