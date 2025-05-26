@@ -30,25 +30,21 @@ public class LocationController extends BaseController {
 
     public Response<Void> createLocation(String id, String name, String city, String country, String latitudeStr, String longitudeStr) {
         try {
-            // Validar ID
             if (id == null || !id.matches("[A-Z]{3}")) {
                 return new Response<>(Status.BAD_REQUEST, "ID debe tener exactamente 3 letras mayúsculas");
             }
 
-            // Verificar unicidad del ID
             List<Location> all = repo.getAll();
             if (all.stream().anyMatch(loc -> loc.getAirportId().equals(id))) {
                 return new Response<>(Status.BAD_REQUEST, "Ya existe una localización con ese ID");
             }
 
-            // Validar campos no vacíos
             if (name == null || name.trim().isEmpty()
                     || city == null || city.trim().isEmpty()
                     || country == null || country.trim().isEmpty()) {
                 return new Response<>(Status.BAD_REQUEST, "Nombre, ciudad y país no pueden estar vacíos");
             }
 
-            // Validar latitud
             double latitude;
             try {
                 latitude = Double.parseDouble(latitudeStr);
@@ -62,7 +58,6 @@ public class LocationController extends BaseController {
                 return new Response<>(Status.BAD_REQUEST, "Latitud inválida");
             }
 
-            // Validar longitud
             double longitude;
             try {
                 longitude = Double.parseDouble(longitudeStr);
@@ -76,11 +71,10 @@ public class LocationController extends BaseController {
                 return new Response<>(Status.BAD_REQUEST, "Longitud inválida");
             }
 
-            // Crear localización
             Location location = new Location(id, name.trim(), city.trim(), country.trim(), latitude, longitude);
             repo.add(location);
 
-            notifyObservers(); // 🔔 Notificar a la vista para refrescar tabla
+            notifyObservers(); 
 
             return new Response<>(Status.CREATED, "Localización creada correctamente");
 

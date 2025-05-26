@@ -56,7 +56,7 @@ public class PlaneController extends BaseController {
             Plane plane = new Plane(id, brand, model, capacity, airline);
             repo.add(plane);
 
-            notifyObservers(); // 🔔 Notifica a la vista que se actualice la tabla
+            notifyObservers();
 
             return new Response<>(Status.OK, "Avión creado exitosamente");
 

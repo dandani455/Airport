@@ -12,12 +12,10 @@ public class PassengerAdapter implements JsonAdapter<Passenger> {
 
     private final List<Flight> flights;
 
-    // ✅ Constructor con lista de vuelos
     public PassengerAdapter(List<Flight> flights) {
         this.flights = flights;
     }
 
-    // ✅ Constructor sin vuelos (por compatibilidad con otros controladores)
     public PassengerAdapter() {
         this.flights = Collections.emptyList();
     }

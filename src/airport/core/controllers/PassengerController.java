@@ -53,7 +53,7 @@ public class PassengerController extends BaseController {
             String phone, String country
     ) {
         try {
-            // ✅ Validación de campos vacíos
+            
             if (firstname == null || firstname.trim().isEmpty()
                     || lastname == null || lastname.trim().isEmpty()
                     || birthYear == null || birthYear.trim().isEmpty()
@@ -65,12 +65,12 @@ public class PassengerController extends BaseController {
                 return new Response<>(Status.BAD_REQUEST, "Ningún campo puede estar vacío");
             }
 
-            // ✅ Validar ID
+            
             if (id < 0 || String.valueOf(id).length() > 15) {
                 return new Response<>(Status.BAD_REQUEST, "ID inválido: debe ser ≥ 0 y tener máximo 15 dígitos.");
             }
 
-            // ✅ Validar fecha de nacimiento
+            
             int y, m, d;
             try {
                 y = Integer.parseInt(birthYear);
@@ -84,7 +84,7 @@ public class PassengerController extends BaseController {
             }
             LocalDate birth = LocalDate.of(y, m, d);
 
-            // ✅ Validar código de país
+            
             int code;
             try {
                 code = Integer.parseInt(countryCode);
@@ -95,7 +95,7 @@ public class PassengerController extends BaseController {
                 return new Response<>(Status.BAD_REQUEST, "Código de país inválido");
             }
 
-            // ✅ Validar número de teléfono
+            
             long phoneNum;
             try {
                 phoneNum = Long.parseLong(phone);
@@ -106,7 +106,7 @@ public class PassengerController extends BaseController {
                 return new Response<>(Status.BAD_REQUEST, "Número de teléfono inválido");
             }
 
-            // ✅ Buscar si el pasajero ya existe
+            
             Passenger existing = repo.find(p -> p.getId() == id).orElse(null);
             if (existing == null) {
                 // CREAR nuevo pasajero
@@ -116,7 +116,7 @@ public class PassengerController extends BaseController {
                 return new Response<>(Status.OK, "Pasajero creado exitosamente");
             }
 
-            // ACTUALIZAR pasajero existente
+            
             boolean changed = false;
 
             if (!firstname.trim().equals(existing.getFirstname())) {
