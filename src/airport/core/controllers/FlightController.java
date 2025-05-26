@@ -20,61 +20,63 @@ public class FlightController extends BaseController {
 
     private final JsonRepository<Flight> repo;
     private final List<Passenger> passengers;
-
-    private final PassengerController passengerController;
+    private final LookupService lookup;
 
     public FlightController(List<Plane> planes, List<Location> locations, List<Passenger> passengers) {
         this.passengers = passengers;
-        this.passengerController = new PassengerController();
-
-        LookupService lookup = new LookupService(planes, locations);
+        this.lookup = new LookupService(planes, locations, passengers, null); // no se usan flights
         this.repo = new JsonRepository<>("json/flights.json", new FlightAdapter(lookup));
     }
 
     public FlightController(List<Plane> planes, List<Location> locations) {
-        this(planes, locations, new JsonRepository<>("json/passengers.json", new PassengerAdapter()).getAll());
+        this(
+                planes,
+                locations,
+                new JsonRepository<>("json/passengers.json", new PassengerAdapter()).getAll()
+        );
     }
 
     public Response<Void> createFlight(
-            String id, Plane plane, Location departure, Location arrival, Location scale,
+            String id, String planeId, String departureId, String arrivalId, String scaleId,
             LocalDateTime departureDate,
             int durationHours, int durationMinutes,
             int scaleHours, int scaleMinutes
     ) {
         try {
+            id = id.trim();
             final String finalId = id;
 
-            // Validar campos obligatorios
-            if (id == null || id.trim().isEmpty() || plane == null || departure == null || arrival == null || departureDate == null) {
+            if (id == null || id.trim().isEmpty() || planeId == null || departureId == null || arrivalId == null || departureDate == null) {
                 return new Response<>(Status.BAD_REQUEST, "Todos los campos obligatorios deben estar llenos");
             }
 
             id = id.trim();
 
-            // Validar formato de ID de vuelo: XXXYYY
             if (!id.matches("[A-Z]{3}\\d{3}")) {
                 return new Response<>(Status.BAD_REQUEST, "El ID del vuelo debe tener el formato XXXYYY");
             }
 
-            if (scale != null) {
-                if (scale.getAirportId().equals(departure.getAirportId())
-                        || scale.getAirportId().equals(arrival.getAirportId())) {
-                    return new Response<>(Status.BAD_REQUEST, "La escala no puede ser igual a la salida o llegada");
-                }
-            }
-
-            // Validar que el ID sea único
-            boolean idExists = repo.getAll().stream().anyMatch(f -> f.getId().equals(finalId));
-            if (idExists) {
+            if (repo.getAll().stream().anyMatch(f -> f.getId().equals(finalId))) {
                 return new Response<>(Status.BAD_REQUEST, "Ya existe un vuelo con ese ID");
             }
 
-            // Validar duración > 00:00
+            Plane plane = lookup.getPlane(planeId);
+            Location departure = lookup.getLocation(departureId);
+            Location arrival = lookup.getLocation(arrivalId);
+            Location scale = (scaleId == null || scaleId.equals("Ninguna")) ? null : lookup.getLocation(scaleId);
+
+            if (plane == null || departure == null || arrival == null) {
+                return new Response<>(Status.BAD_REQUEST, "Datos inválidos: avión o localizaciones no encontrados");
+            }
+
+            if (scale != null && (scale.getAirportId().equals(departure.getAirportId()) || scale.getAirportId().equals(arrival.getAirportId()))) {
+                return new Response<>(Status.BAD_REQUEST, "La escala no puede ser igual a la salida o llegada");
+            }
+
             if (durationHours < 0 || durationMinutes < 0 || (durationHours == 0 && durationMinutes == 0)) {
                 return new Response<>(Status.BAD_REQUEST, "La duración del vuelo debe ser mayor a 00:00");
             }
 
-            // Si no hay escala, duración de escala debe ser 0
             if (scale == null && (scaleHours != 0 || scaleMinutes != 0)) {
                 return new Response<>(Status.BAD_REQUEST, "Si no hay escala, su duración debe ser 00:00");
             }
@@ -88,7 +90,7 @@ public class FlightController extends BaseController {
             }
 
             repo.add(flight);
-            notifyObservers(); // 🔔 Notificar a la vista para actualizar tabla
+            notifyObservers();
             return new Response<>(Status.CREATED, "Vuelo creado exitosamente");
 
         } catch (Exception e) {
@@ -99,7 +101,7 @@ public class FlightController extends BaseController {
     public Response<List<Flight>> getAllFlights() {
         try {
             List<Flight> flights = repo.getAll();
-            flights.sort(Comparator.comparing(Flight::getDepartureDate)); // orden por fecha
+            flights.sort(Comparator.comparing(Flight::getDepartureDate));
             return new Response<>(Status.OK, "Vuelos obtenidos exitosamente", flights);
         } catch (Exception e) {
             return new Response<>(Status.INTERNAL_SERVER_ERROR, "Error obteniendo vuelos", Collections.emptyList());
@@ -115,7 +117,6 @@ public class FlightController extends BaseController {
 
     public Response<Void> addPassengerToFlight(long passengerId, String flightId) {
         try {
-            // Buscar vuelo
             Flight flight = repo.getAll().stream()
                     .filter(f -> f.getId().equals(flightId))
                     .findFirst()
@@ -125,13 +126,11 @@ public class FlightController extends BaseController {
                 return new Response<>(Status.NOT_FOUND, "Vuelo no encontrado");
             }
 
-            // Buscar pasajero desde la lista cargada (solo en sesión)
             Passenger passenger = getPassengerByIdLocal(passengerId);
             if (passenger == null) {
                 return new Response<>(Status.NOT_FOUND, "Pasajero no encontrado");
             }
 
-            // Validar si ya está en el vuelo
             boolean yaRelacionado = passenger.getFlights().stream().anyMatch(f -> f.getId().equals(flightId))
                     || flight.getPassengers().stream().anyMatch(p -> p.getId() == passengerId);
 
@@ -139,11 +138,10 @@ public class FlightController extends BaseController {
                 return new Response<>(Status.BAD_REQUEST, "El pasajero ya está en este vuelo");
             }
 
-            // Relación en memoria (solo en sesión)
             passenger.addFlight(flight);
             flight.addPassenger(passenger);
 
-            notifyObservers(); 
+            notifyObservers();
             return new Response<>(Status.OK, "Pasajero agregado al vuelo exitosamente");
 
         } catch (Exception e) {

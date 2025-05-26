@@ -8,12 +8,8 @@ import airport.core.controllers.PlaneController;
 import airport.core.models.Location;
 import airport.core.models.Passenger;
 import airport.core.models.Plane;
-import com.formdev.flatlaf.FlatDarkLaf;
 import java.awt.Color;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 import airport.core.controllers.utils.Response;
 import airport.core.controllers.utils.Status;
@@ -26,10 +22,6 @@ import java.util.stream.Collectors;
 public class AirportFrame extends javax.swing.JFrame {
 
     private int x, y;
-    private ArrayList<Passenger> passengers;
-    private ArrayList<Plane> planes;
-    private ArrayList<Location> locations;
-    private ArrayList<Flight> flights;
     private PassengerController passengerController;
     private FlightController flightController;
     private LocationController locationController;
@@ -39,29 +31,20 @@ public class AirportFrame extends javax.swing.JFrame {
     public AirportFrame() {
         initComponents();
 
-        passengerController = new PassengerController(
-                new FlightController(
-                        new PlaneController().getAllPlanes().getObject(),
-                        new LocationController().getAllLocations().getObject()
-                ).getAllFlights().getObject()
-        );
         locationController = new LocationController();
         planeController = new PlaneController();
         flightController = new FlightController(
                 planeController.getAllPlanes().getObject(),
-                locationController.getAllLocations().getObject(),
-                passengerController.getAllPassengers().getObject()
+                locationController.getAllLocations().getObject()
+        );
+        passengerController = new PassengerController(
+                flightController.getAllFlights().getObject()
         );
 
         passengerController.addObserver(() -> RefreshButton_ShowAllPassengers.doClick());
         planeController.addObserver(() -> RefreshButton_ShowAllPlanes.doClick());
         locationController.addObserver(() -> RefreshButton_ShowAllLocations.doClick());
         flightController.addObserver(() -> RefreshButton_ShowAllFlights.doClick());
-
-        this.passengers = new ArrayList<>();
-        this.planes = new ArrayList<>();
-        this.locations = new ArrayList<>();
-        this.flights = new ArrayList<>();
 
         this.setBackground(new Color(0, 0, 0, 0));
         this.setLocationRelativeTo(null);
@@ -1543,7 +1526,6 @@ public class AirportFrame extends javax.swing.JFrame {
         jTabbedPane1.setEnabledAt(7, true);
         jTabbedPane1.setEnabledAt(11, true);
 
-        cargarUsuariosEnComboBox();
     }//GEN-LAST:event_UserOption_AdministrationActionPerformed
 
     private void RegisterButton_PassengerRegistrationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RegisterButton_PassengerRegistrationActionPerformed
@@ -1558,20 +1540,26 @@ public class AirportFrame extends javax.swing.JFrame {
             String phone = Phone_PassengerRegistration.getText();
             String country = Country_PassengerRegistration.getText();
 
-            Response<Void> response = passengerController.updatePassenger(id, firstname, lastname, year, month, day, phoneCode, phone, country);
+            Response<Void> response = passengerController.updatePassenger(
+                    id, firstname, lastname, year, month, day, phoneCode, phone, country);
 
             if (response.getStatus() == Status.OK) {
                 JOptionPane.showMessageDialog(this, "Pasajero registrado correctamente");
-                userSelect.addItem(firstname + " " + lastname); // si quieres que aparezca en el combo
+                String nombreCompleto = firstname + " " + lastname;
+                userSelect.addItem(nombreCompleto);
+                nombreIdMap.put(nombreCompleto, id);
             } else if (response.getStatus() == Status.NO_CONTENT) {
                 JOptionPane.showMessageDialog(this, "Ya existe un pasajero con estos datos");
             } else {
                 JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
 
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "El ID debe ser un número válido", "Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Datos inválidos: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error inesperado: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+
     }//GEN-LAST:event_RegisterButton_PassengerRegistrationActionPerformed
 
     private void CreateButton_AirplaneRegistrationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CreateButton_AirplaneRegistrationActionPerformed
@@ -1583,9 +1571,18 @@ public class AirportFrame extends javax.swing.JFrame {
 
         Response<Void> response = planeController.createPlane(id, marca, modelo, capacidadStr, aerolinea);
 
-        if (response.getStatus() == Status.OK) {
-            JOptionPane.showMessageDialog(this, response.getMessage());
-            SelectPlane_FlightRegistration.addItem(id); // actualizar dropdown de vuelos si aplica
+        if (response.getStatus() == Status.CREATED) {
+            JOptionPane.showMessageDialog(this, response.getMessage(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
+
+            Id_AirplaneRegistration.setText("");
+            Brand_AirplaneRegistration.setText("");
+            Model_AirplaneRegistration.setText("");
+            MaxCapacity_AirplaneRegistration.setText("");
+            Airline_AirplaneRegistration.setText("");
+
+            SelectPlane_FlightRegistration.addItem(id);
+        } else if (response.getStatus() >= 400 && response.getStatus() < 500) {
+            JOptionPane.showMessageDialog(this, response.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -1599,13 +1596,11 @@ public class AirportFrame extends javax.swing.JFrame {
         String latitude = AirportLatitude_LocationRegistration.getText().trim();
         String longitude = AirportLongitude_LocationRegistration.getText().trim();
 
-        // Llamar al controlador para crear la localización
         Response<Void> response = locationController.createLocation(id, name, city, country, latitude, longitude);
 
         if (response.getStatus() == Status.CREATED) {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
 
-            // Limpiar campos
             AirportID_LocationRegistration.setText("");
             AirportName_LocationRegistration.setText("");
             AirportCity_LocationRegistration.setText("");
@@ -1613,68 +1608,24 @@ public class AirportFrame extends javax.swing.JFrame {
             AirportLatitude_LocationRegistration.setText("");
             AirportLongitude_LocationRegistration.setText("");
 
-            // Recargar combos que usan localizaciones
-            SelectDepartureLocation_FlightRegistration.addItem(id); // Departure
-            SelectArrivalLocation_FlightRegistration.addItem(id); // Arrival
-            ScaleLocation_FlightRegistration.addItem(id); // Scale
-
+            SelectDepartureLocation_FlightRegistration.addItem(id);
+            SelectArrivalLocation_FlightRegistration.addItem(id);
+            ScaleLocation_FlightRegistration.addItem(id);
+        } else if (response.getStatus() >= 400 && response.getStatus() < 500) {
+            JOptionPane.showMessageDialog(this, response.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
         } else {
-            // Mostrar mensaje de error
             JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_CreateButton_LocationRegistrationActionPerformed
 
     private void CreateButton_FlightRegistrationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CreateButton_FlightRegistrationActionPerformed
         try {
-            // ID del vuelo
             String id = ID_FlightRegistration.getText().trim();
-
-            // Obtener avión desde ID
             String selectedPlaneId = (String) SelectPlane_FlightRegistration.getSelectedItem();
-            Plane plane = null;
-            for (Plane p : planeController.getAllPlanes().getObject()) {
-                if (p.getId().equals(selectedPlaneId)) {
-                    plane = p;
-                    break;
-                }
-            }
-            if (plane == null) {
-                JOptionPane.showMessageDialog(this, "Selecciona un avión válido.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Obtener localizaciones: salida y llegada
             String depId = (String) SelectDepartureLocation_FlightRegistration.getSelectedItem();
             String arrId = (String) SelectArrivalLocation_FlightRegistration.getSelectedItem();
-            Location departure = null;
-            Location arrival = null;
-            for (Location loc : locationController.getAllLocations().getObject()) {
-                if (loc.getAirportId().equals(depId)) {
-                    departure = loc;
-                }
-                if (loc.getAirportId().equals(arrId)) {
-                    arrival = loc;
-                }
-            }
-
-            if (departure == null || arrival == null) {
-                JOptionPane.showMessageDialog(this, "Selecciona localizaciones válidas.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Obtener escala
-            Location scale = null;
             String selectedScale = (String) ScaleLocation_FlightRegistration.getSelectedItem();
-            if (!"Ninguna".equals(selectedScale)) {
-                for (Location loc : locationController.getAllLocations().getObject()) {
-                    if (loc.getAirportId().equals(selectedScale)) {
-                        scale = loc;
-                        break;
-                    }
-                }
-            }
 
-            // Fecha y hora de salida
             int year = Integer.parseInt(DepartureDate_Day_FlightRegistration.getText());
             int month = Integer.parseInt((String) DepartureDate_SelectMonth_FlightRegistration.getSelectedItem());
             int day = Integer.parseInt((String) DepartureDate_SelectDay_FlightRegistration.getSelectedItem());
@@ -1682,29 +1633,17 @@ public class AirportFrame extends javax.swing.JFrame {
             int minute = Integer.parseInt((String) DepartureDate_SelectMinute_FlightRegistration.getSelectedItem());
             LocalDateTime departureDate = LocalDateTime.of(year, month, day, hour, minute);
 
-            // Validación de duración a destino
-            String durHourStr = (String) ArrivalDuration_SelectHour_FlightRegistration.getSelectedItem();
-            String durMinStr = (String) ArrivalDuration_SelectMinute_FlightRegistration.getSelectedItem();
-            if ("Hour".equals(durHourStr) || "Minute".equals(durMinStr)) {
-                JOptionPane.showMessageDialog(this, "Selecciona duración válida para el destino.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            int durationHours = Integer.parseInt(durHourStr);
-            int durationMinutes = Integer.parseInt(durMinStr);
+            int durationHours = Integer.parseInt((String) ArrivalDuration_SelectHour_FlightRegistration.getSelectedItem());
+            int durationMinutes = Integer.parseInt((String) ArrivalDuration_SelectMinute_FlightRegistration.getSelectedItem());
 
-            // Validación de duración de escala
-            String scaleHourStr = (String) ScaleDuration_SelectHour_FlightRegistration.getSelectedItem();
-            String scaleMinStr = (String) ScaleDuration_SelectMinute_FlightRegistration.getSelectedItem();
-            if (scale != null && ("Hour".equals(scaleHourStr) || "Minute".equals(scaleMinStr))) {
-                JOptionPane.showMessageDialog(this, "Selecciona duración válida para la escala.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
+            int scaleHours = 0, scaleMinutes = 0;
+            if (!"Ninguna".equals(selectedScale)) {
+                scaleHours = Integer.parseInt((String) ScaleDuration_SelectHour_FlightRegistration.getSelectedItem());
+                scaleMinutes = Integer.parseInt((String) ScaleDuration_SelectMinute_FlightRegistration.getSelectedItem());
             }
-            int scaleHours = scale == null ? 0 : Integer.parseInt(scaleHourStr);
-            int scaleMinutes = scale == null ? 0 : Integer.parseInt(scaleMinStr);
 
-            // Crear vuelo desde controlador
             Response<Void> response = flightController.createFlight(
-                    id, plane, departure, arrival, scale,
+                    id, selectedPlaneId, depId, arrId, selectedScale,
                     departureDate, durationHours, durationMinutes,
                     scaleHours, scaleMinutes
             );
@@ -1712,12 +1651,14 @@ public class AirportFrame extends javax.swing.JFrame {
             if (response.getStatus() == Status.CREATED) {
                 JOptionPane.showMessageDialog(this, response.getMessage(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 SelectFlight_AddToFlight.addItem(id);
+            } else if (response.getStatus() >= 400 && response.getStatus() < 500) {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
 
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Formato numérico inválido: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error de formato numérico: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error inesperado: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -1725,49 +1666,58 @@ public class AirportFrame extends javax.swing.JFrame {
 
     private void UpdateButton_UpdateInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_UpdateButton_UpdateInfoActionPerformed
         try {
-            long id = Long.parseLong(ID_UpdateInfo.getText());
-            String firstname = FirstName_UpdateInfo.getText();
-            String lastname = LastName_UpdateInfo.getText();
-            String year = BirthdayYear_UpdateInfo.getText();
-            String month = (String) SelectBirthdayMonth_UpdateInfo.getSelectedItem();
-            String day = (String) SelectBirthdayDay_UpdateInfo.getSelectedItem();
-            String countryCode = CountryIdentifier_UpdateInfo.getText();
-            String phone = Phone_UpdateInfo.getText();
-            String country = Country_UpdateInfo.getText();
+            long passengerId = Long.parseLong(ID_AddToFlight.getText().trim());
+            String flightId = (String) SelectFlight_AddToFlight.getSelectedItem();
 
-            Response<Void> response = passengerController.updatePassenger(
-                    id, firstname, lastname, year, month, day, countryCode, phone, country
-            );
-
-            if (response.getStatus() == Status.OK) {
-                JOptionPane.showMessageDialog(this, "Información actualizada exitosamente.");
-            } else if (response.getStatus() == Status.NO_CONTENT) {
-                JOptionPane.showMessageDialog(this, response.getMessage(), "Sin cambios", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            if (flightId == null || flightId.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Debes seleccionar un vuelo.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+                return;
             }
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al actualizar: " + e.getMessage(), "Excepción", JOptionPane.ERROR_MESSAGE);
-        }
-    }//GEN-LAST:event_UpdateButton_UpdateInfoActionPerformed
-
-    private void Add_AddToFlightActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_Add_AddToFlightActionPerformed
-        try {
-            long passengerId = Long.parseLong(ID_AddToFlight.getText());
-            String flightId = SelectFlight_AddToFlight.getItemAt(SelectFlight_AddToFlight.getSelectedIndex());
 
             Response<Void> response = flightController.addPassengerToFlight(passengerId, flightId);
 
             if (response.getStatus() == Status.OK) {
-                JOptionPane.showMessageDialog(this, "Pasajero agregado correctamente");
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
 
                 Add_AddToFlightActionPerformed(null);
+            } else if (response.getStatus() >= 400 && response.getStatus() < 500) {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "El ID del pasajero debe ser numérico.", "Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Datos inválidos", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error inesperado: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+    }//GEN-LAST:event_UpdateButton_UpdateInfoActionPerformed
+
+    private void Add_AddToFlightActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_Add_AddToFlightActionPerformed
+        try {
+            long passengerId = Long.parseLong(ID_AddToFlight.getText().trim());
+            String flightId = (String) SelectFlight_AddToFlight.getSelectedItem();
+
+            if (flightId == null || flightId.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Debes seleccionar un vuelo.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            Response<Void> response = flightController.addPassengerToFlight(passengerId, flightId);
+
+            if (response.getStatus() == Status.OK) {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
+
+                Add_AddToFlightActionPerformed(null);
+            } else if (response.getStatus() >= 400 && response.getStatus() < 500) {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "El ID del pasajero debe ser numérico.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error inesperado: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_Add_AddToFlightActionPerformed
 
@@ -1775,7 +1725,7 @@ public class AirportFrame extends javax.swing.JFrame {
         try {
             String flightId = (String) SelectID_DelayFlight.getSelectedItem();
             if (flightId == null || flightId.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Debes seleccionar un vuelo", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Debes seleccionar un vuelo", "Advertencia", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -1783,47 +1733,28 @@ public class AirportFrame extends javax.swing.JFrame {
             String minStr = (String) SelectMinute_DelayFlight.getSelectedItem();
 
             if ("Hour".equals(hourStr) || "Minute".equals(minStr)) {
-                JOptionPane.showMessageDialog(this, "Selecciona una hora y minutos válidos para el retraso", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Selecciona una hora y minutos válidos para el retraso", "Advertencia", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             int hours = Integer.parseInt(hourStr);
             int minutes = Integer.parseInt(minStr);
 
-            if (hours == 0 && minutes == 0) {
-                JOptionPane.showMessageDialog(this, "La duración del retraso debe ser mayor a 0", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
+            Response<Void> response = flightController.delayFlight(flightId, hours, minutes);
+
+            if (response.getStatus() == Status.OK) {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                DelayButton_DelayFlightActionPerformed(null); // Refrescar tabla
+            } else if (response.getStatus() >= 400 && response.getStatus() < 500) {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-
-            // Buscar el vuelo desde el controlador
-            Response<List<Flight>> response = flightController.getAllFlights();
-            if (response.getStatus() != Status.OK) {
-                JOptionPane.showMessageDialog(this, "Error al obtener los vuelos", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            Flight selectedFlight = response.getObject().stream()
-                    .filter(f -> f.getId().equals(flightId))
-                    .findFirst()
-                    .orElse(null);
-
-            if (selectedFlight == null) {
-                JOptionPane.showMessageDialog(this, "Vuelo no encontrado", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Aplicar retraso (solo afecta la sesión, como indica el parcial)
-            selectedFlight.delay(hours, minutes);
-
-            JOptionPane.showMessageDialog(this, "Vuelo retrasado exitosamente");
-
-            // Actualizar la tabla de vuelos
-            DelayButton_DelayFlightActionPerformed(null);
 
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Formato de número inválido en hora o minuto", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Formato inválido de número: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al retrasar vuelo: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error inesperado: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_DelayButton_DelayFlightActionPerformed
 

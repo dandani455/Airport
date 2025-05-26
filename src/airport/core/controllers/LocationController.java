@@ -5,7 +5,7 @@ import airport.core.controllers.utils.Status;
 import airport.core.models.Location;
 import airport.core.models.storage.JsonRepository;
 import airport.core.models.storage.adapters.LocationAdapter;
-
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -55,7 +55,7 @@ public class LocationController extends BaseController {
                 if (latitude < -90 || latitude > 90) {
                     return new Response<>(Status.BAD_REQUEST, "Latitud debe estar entre -90 y 90");
                 }
-                if (String.valueOf(latitude).split("\\.")[1].length() > 4) {
+                if (hasMoreThan4Decimals(latitude)) {
                     return new Response<>(Status.BAD_REQUEST, "Latitud debe tener como máximo 4 decimales");
                 }
             } catch (Exception e) {
@@ -69,7 +69,7 @@ public class LocationController extends BaseController {
                 if (longitude < -180 || longitude > 180) {
                     return new Response<>(Status.BAD_REQUEST, "Longitud debe estar entre -180 y 180");
                 }
-                if (String.valueOf(longitude).split("\\.")[1].length() > 4) {
+                if (hasMoreThan4Decimals(longitude)) {
                     return new Response<>(Status.BAD_REQUEST, "Longitud debe tener como máximo 4 decimales");
                 }
             } catch (Exception e) {
@@ -80,12 +80,17 @@ public class LocationController extends BaseController {
             Location location = new Location(id, name.trim(), city.trim(), country.trim(), latitude, longitude);
             repo.add(location);
 
-            notifyObservers(); // 🔔 Notificar a la vista para refrescar tabla
+            notifyObservers();
 
             return new Response<>(Status.CREATED, "Localización creada correctamente");
 
         } catch (Exception e) {
             return new Response<>(Status.INTERNAL_SERVER_ERROR, "Error al crear localización");
         }
+    }
+
+    private boolean hasMoreThan4Decimals(double value) {
+        BigDecimal bd = BigDecimal.valueOf(value);
+        return bd.scale() > 4;
     }
 }
