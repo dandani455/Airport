@@ -10,13 +10,13 @@ import airport.core.models.storage.JsonRepository;
 import airport.core.models.storage.adapters.FlightAdapter;
 import airport.core.models.storage.adapters.PassengerAdapter;
 import airport.core.services.LookupService;
-import java.time.LocalDateTime;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class FlightController {
+public class FlightController extends BaseController {
 
     private final JsonRepository<Flight> repo;
     private final List<Passenger> passengers;
@@ -42,7 +42,8 @@ public class FlightController {
             int scaleHours, int scaleMinutes
     ) {
         try {
-            final String finalId = id; 
+            final String finalId = id;
+
             // Validar campos obligatorios
             if (id == null || id.trim().isEmpty() || plane == null || departure == null || arrival == null || departureDate == null) {
                 return new Response<>(Status.BAD_REQUEST, "Todos los campos obligatorios deben estar llenos");
@@ -61,7 +62,7 @@ public class FlightController {
                     return new Response<>(Status.BAD_REQUEST, "La escala no puede ser igual a la salida o llegada");
                 }
             }
-            
+
             // Validar que el ID sea único
             boolean idExists = repo.getAll().stream().anyMatch(f -> f.getId().equals(finalId));
             if (idExists) {
@@ -87,6 +88,7 @@ public class FlightController {
             }
 
             repo.add(flight);
+            notifyObservers(); // 🔔 Notificar a la vista para actualizar tabla
             return new Response<>(Status.CREATED, "Vuelo creado exitosamente");
 
         } catch (Exception e) {
@@ -129,7 +131,7 @@ public class FlightController {
                 return new Response<>(Status.NOT_FOUND, "Pasajero no encontrado");
             }
 
-            // ✅ Validación: Verificar si ya está en el vuelo
+            // Validar si ya está en el vuelo
             boolean yaRelacionado = passenger.getFlights().stream().anyMatch(f -> f.getId().equals(flightId))
                     || flight.getPassengers().stream().anyMatch(p -> p.getId() == passengerId);
 
@@ -141,6 +143,7 @@ public class FlightController {
             passenger.addFlight(flight);
             flight.addPassenger(passenger);
 
+            notifyObservers(); 
             return new Response<>(Status.OK, "Pasajero agregado al vuelo exitosamente");
 
         } catch (Exception e) {

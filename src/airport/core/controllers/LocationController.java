@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class LocationController {
+public class LocationController extends BaseController {
 
     private final JsonRepository<Location> repo;
 
@@ -80,7 +80,10 @@ public class LocationController {
             Location location = new Location(id, name.trim(), city.trim(), country.trim(), latitude, longitude);
             repo.add(location);
 
+            notifyObservers(); // 🔔 Notificar a la vista para refrescar tabla
+
             return new Response<>(Status.CREATED, "Localización creada correctamente");
+
         } catch (Exception e) {
             return new Response<>(Status.INTERNAL_SERVER_ERROR, "Error al crear localización");
         }

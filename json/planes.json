@@ -89,5 +89,12 @@
         "id": "TE01234",
         "airline": "TestAir",
         "brand": "Test"
+    },
+    {
+        "maxCapacity": 100,
+        "model": "A32",
+        "id": "AA12345",
+        "airline": "Avianca",
+        "brand": "Airboing123"
     }
 ]

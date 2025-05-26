@@ -53,6 +53,11 @@ public class AirportFrame extends javax.swing.JFrame {
                 passengerController.getAllPassengers().getObject()
         );
 
+        passengerController.addObserver(() -> RefreshButton_ShowAllPassengers.doClick());
+        planeController.addObserver(() -> RefreshButton_ShowAllPlanes.doClick());
+        locationController.addObserver(() -> RefreshButton_ShowAllLocations.doClick());
+        flightController.addObserver(() -> RefreshButton_ShowAllFlights.doClick());
+
         this.passengers = new ArrayList<>();
         this.planes = new ArrayList<>();
         this.locations = new ArrayList<>();
@@ -134,7 +139,7 @@ public class AirportFrame extends javax.swing.JFrame {
 
     private void cargarAvionesEnComboBox() {
         SelectPlane_FlightRegistration.removeAllItems();
-        
+
         Response<List<Plane>> response = planeController.getAllPlanes();
 
         if (response.getStatus() == Status.OK) {
@@ -168,7 +173,7 @@ public class AirportFrame extends javax.swing.JFrame {
     private void cargarVuelosEnComboBox() {
         SelectFlight_AddToFlight.removeAllItems(); // Limpia el ComboBox de vuelos
         SelectID_DelayFlight.removeAllItems();
-        
+
         Response<List<Flight>> response = flightController.getAllFlights();
         if (response.getStatus() == Status.OK) {
             for (Flight flight : response.getObject()) {
@@ -1542,21 +1547,31 @@ public class AirportFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_UserOption_AdministrationActionPerformed
 
     private void RegisterButton_PassengerRegistrationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RegisterButton_PassengerRegistrationActionPerformed
-        // TODO add your handling code here:
-        long id = Long.parseLong(Id_PassengerRegistration.getText());
-        String firstname = FirstName_PassengerResgistration.getText();
-        String lastname = LastName_PassengerRegistration.getText();
-        int year = Integer.parseInt(BirhtdayYear_PassengerRegistration.getText());
-        int month = Integer.parseInt(SelectBirthdayMonth_PassengerRegistration.getItemAt(SelectBirthdayMonth_PassengerRegistration.getSelectedIndex()));
-        int day = Integer.parseInt(SelectBirthdayDay_PassengerRegistration.getItemAt(SelectBirthdayDay_PassengerRegistration.getSelectedIndex()));
-        int phoneCode = Integer.parseInt(CountryIdentifier_PassengerRegistration.getText());
-        long phone = Long.parseLong(Phone_PassengerRegistration.getText());
-        String country = Country_PassengerRegistration.getText();
+        try {
+            long id = Long.parseLong(Id_PassengerRegistration.getText());
+            String firstname = FirstName_PassengerResgistration.getText();
+            String lastname = LastName_PassengerRegistration.getText();
+            String year = BirhtdayYear_PassengerRegistration.getText();
+            String month = (String) SelectBirthdayMonth_PassengerRegistration.getSelectedItem();
+            String day = (String) SelectBirthdayDay_PassengerRegistration.getSelectedItem();
+            String phoneCode = CountryIdentifier_PassengerRegistration.getText();
+            String phone = Phone_PassengerRegistration.getText();
+            String country = Country_PassengerRegistration.getText();
 
-        LocalDate birthDate = LocalDate.of(year, month, day);
+            Response<Void> response = passengerController.updatePassenger(id, firstname, lastname, year, month, day, phoneCode, phone, country);
 
-        this.passengers.add(new Passenger(id, firstname, lastname, birthDate, phoneCode, phone, country));
-        this.userSelect.addItem("" + id);
+            if (response.getStatus() == Status.OK) {
+                JOptionPane.showMessageDialog(this, "Pasajero registrado correctamente");
+                userSelect.addItem(firstname + " " + lastname); // si quieres que aparezca en el combo
+            } else if (response.getStatus() == Status.NO_CONTENT) {
+                JOptionPane.showMessageDialog(this, "Ya existe un pasajero con estos datos");
+            } else {
+                JOptionPane.showMessageDialog(this, response.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Datos inválidos: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_RegisterButton_PassengerRegistrationActionPerformed
 
     private void CreateButton_AirplaneRegistrationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CreateButton_AirplaneRegistrationActionPerformed

@@ -9,7 +9,7 @@ import airport.core.models.storage.adapters.PlaneAdapter;
 import java.util.Comparator;
 import java.util.List;
 
-public class PlaneController {
+public class PlaneController extends BaseController {
 
     private final JsonRepository<Plane> repo;
 
@@ -18,7 +18,7 @@ public class PlaneController {
     }
 
     public Response<Void> createPlane(String id, String brand, String model, String capacityStr, String airline) {
-        final String finalId = id;        
+        final String finalId = id;
         try {
             if (id == null || brand == null || model == null || capacityStr == null || airline == null
                     || id.trim().isEmpty() || brand.trim().isEmpty() || model.trim().isEmpty()
@@ -31,21 +31,18 @@ public class PlaneController {
             model = model.trim();
             airline = airline.trim();
 
-            // Validar manualmente el formato XXYYYYY (dos letras mayúsculas + 5 dígitos)
             if (id.length() != 7
                     || !Character.isUpperCase(id.charAt(0)) || !Character.isUpperCase(id.charAt(1))
                     || !id.substring(2).matches("\\d{5}")) {
                 return new Response<>(Status.BAD_REQUEST, "El ID debe tener el formato XXYYYYY (dos letras y cinco dígitos)");
             }
 
-            // Validar que el ID sea único
             List<Plane> planes = repo.getAll();
             boolean existe = planes.stream().anyMatch(p -> p.getId().equals(finalId));
             if (existe) {
                 return new Response<>(Status.BAD_REQUEST, "Ya existe un avión con ese ID");
             }
 
-            // Validar capacidad
             int capacity;
             try {
                 capacity = Integer.parseInt(capacityStr);
@@ -58,6 +55,8 @@ public class PlaneController {
 
             Plane plane = new Plane(id, brand, model, capacity, airline);
             repo.add(plane);
+
+            notifyObservers(); // 🔔 Notifica a la vista que se actualice la tabla
 
             return new Response<>(Status.OK, "Avión creado exitosamente");
 
